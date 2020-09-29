@@ -1,7 +1,5 @@
 # zoom_scheduler
-Bilkent Zoom Scheduler
-
-________________________________________Welcome to Zoom Scheduler V1_____________________________________________
+Bilkent Zoom Scheduler V1
                                                                                                   
  												                    
       														    
