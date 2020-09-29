@@ -1,7 +1,8 @@
 # zoom_scheduler
 Bilkent Zoom Scheduler
+
 ________________________________________Welcome to Zoom Scheduler V1________________________________________________
-                                                                                                  Created by mrjacob
+                                                                                                  
  												                    
       														    
 1) Before opening the program, you should change the context of 'your_info.txt' file.                               
