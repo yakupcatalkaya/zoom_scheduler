@@ -5,7 +5,7 @@ from flask import Flask, request, send_file
 
 app = Flask(__name__)
 
-@app.route('/model_verify', methods=['POST'])
+@app.route('/', methods=['POST'])
 def model_verify():
     program_path = "/CuraEngine/build/CuraEngine"
     #output_folder = str(random.randint(10**9, 10**10))
