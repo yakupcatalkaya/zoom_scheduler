@@ -1,39 +1,60 @@
 import subprocess
-import argparse
-import os
-from google.cloud import storage
+#from google.cloud import storage
+from flask import Flask, request, send_file
+#import random
 
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--file", default="herringbone-gear-large.stl")
-    parser.add_argument("-m", "--machine", default="fdmprinter.def.json")
-    parser.add_argument("-e", "--extruder", default="prusa_i3.def.json")
-    parser.add_argument("-o", "--folder", default="")
-    args = parser.parse_args()
-    return args
+app = Flask(__name__)
 
-def call_cmd(printer_json, extruder_json, stl_file, output_folder, number = 0):
-  while os.path.isfile("output_" + str(number)): number += 1
-  else:output_file = "output_" + str(number)
-  program_path = "/CuraEngine/build/CuraEngine"
-  command = [program_path, "slice", "-p", "-j", printer_json, "-j", extruder_json, "-l", stl_file, "-o", output_file]
-  command = " ".join(command)
-  proc = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-  out, err = proc.communicate()
-  bucket_name = 'cura_files'
-  storage_client = storage.Client()
-  bucket = storage_client.get_bucket(bucket_name)
-  filee = output_folder+"output.gcode"
-  blob = bucket.blob(filee)
-  with open(output_file,"rb") as myfile:
-    blob.upload_from_string(str(myfile.read().decode("latin")))
-  outfile = "https://storage.cloud.google.com/" + bucket_name + filee
-  return [out, out.decode(), outfile]
+@app.route('/model_verify', methods=['POST'])
+def model_verify():
+    program_path = "/CuraEngine/build/CuraEngine"
+    #output_folder = str(random.randint(10**9, 10**10))
+    output_file = "output.gcode"
+    command = [program_path, "slice", "-p"]
+
+    try:
+      machine_file = request.files['machine']
+      for item in ["-j", machine_file]:command.append(item)
+    except:
+       pass
+    
+    try:
+      extruder_file = request.files['extruder']
+      for item in ["-j", extruder_file]:command.append(item)
+    except:
+       pass
+    
+    try:
+      input_file = request.files['input']
+      for item in ["-l", input_file]:command.append(item)
+    except:
+       pass
+    
+    for item in ["-o", output_file]:command.append(item)
+
+    command = " ".join(command)
+    proc = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    out, err = proc.communicate()
+
+    #bucket_name = 'cura_files'
+    #storage_client = storage.Client()
+    #bucket = storage_client.get_bucket(bucket_name)
+    #output = output_folder + output_file
+    #blob = bucket.blob(output)
+
+    with open(output_file,"rb") as myfile:
+      content = str(myfile.read().decode("latin"))
+      for line in content.split("\n")[::-1]:
+        if "TIME_ELAPSED".lower() in line.lower():
+           eta = line
+        elif "Filament used".lower() in line.lower():
+           cost = float(line.split()[-1][:-1])*10
+      #blob.upload_from_string(content)
+
+    #output_url = "https://storage.cloud.google.com/" + bucket_name + output
+    send_file(output_file, as_attachment=True)
+    return {"out":out, "err":err, "eta":eta, "cost":cost}, 200
 
 
-args = get_args()
-out, decoded_out, output_file = call_cmd(args.machine, args.extruder, args.file,args.folder)
-cont = open(output_file).read()
-for line in cont.split("\n")[::-1]:
-  if "TIME_ELAPSED" in line:break
-print(decoded_out, output_file,line[1:])
+if __name__ == '__main__':
+    app.run(debug=True)
