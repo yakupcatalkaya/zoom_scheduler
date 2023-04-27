@@ -5,7 +5,7 @@ from flask import Flask, request, send_file
 
 app = Flask(__name__)
 
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['POST','GET'])
 def model_verify():
     print("Begining...")
     program_path = "/CuraEngine/build/CuraEngine"
@@ -15,24 +15,22 @@ def model_verify():
 
     try:
       machine_file = request.files['machine']
-      with open("machine.json","w") as file:
-         file.write(machine_file)
+      print(machine_file)
+      machine_file.save("machine.json")
       for item in ["-j", "machine.json"]:command.append(item)
     except:
        pass
     
     try:
       extruder_file = request.files['extruder']
-      with open("extruder.json","w") as file:
-         file.write(extruder_file)
+      extruder_file.save("extruder.json")
       for item in ["-j", "extruder.json"]:command.append(item)
-    except:
-       pass
+    except Exception as e:
+       print(e)
     
     try:
       input_file = request.files['input']
-      with open("input.stl","w") as file:
-         file.write(input_file)
+      input_file.save("input.stl")
       for item in ["-l", "input.stl"]:command.append(item)
     except:
        pass
@@ -64,4 +62,4 @@ def model_verify():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True,port=8080)
